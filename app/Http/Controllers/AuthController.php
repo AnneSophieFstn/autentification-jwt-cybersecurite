@@ -26,14 +26,14 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login(Request $request){
+    public function login (Request $request){
     	$validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json(['message' => "Le mot de passe doit être supérieur à 6 !"]);
         }
 
         
@@ -42,27 +42,30 @@ class AuthController extends Controller
             $user = User::where('email', $request->email)->first();
             if(!$user || !Hash::check($request->password, $user->password))
             {
+
                 $user->essais = $user->essais + 1;
                 $user->save();
-        
+                $essaisRestant = $user->essais -1;
+
                 if($user->essais > 3){
-                    $user->essais = 3;
+                    Log::debug('Trop de tentative pour l\'utilisateur: ' . $user->name . ' ' . $user->email);
+                    $user->essais = 0;
                     $user->save();
-                    
                     return response()->json([
                         
                         'message' => "Trop de tentatives de connexion, vous ne pouvez plus vous connecter.",
                     ]);
+                } else {    
+                    return response()->json([
+                        'message' => 'L\'email ou le mot de passe est incorrect, il vous reste '
+                        . (3 - $essaisRestant) . ' tentatives'
+                        
+                    ]);
                 }
-                return response()->json([
-                    'Erreur' => 'L\'email ou le mot de passe est incorrect',
-                    
-                ]);
             }
         }
 
-        return $this->createNewToken($token);
-
+        return response()->json(['message' => 'vous êtes connecté', 'token' => compact('token')]);
     }
 
 
