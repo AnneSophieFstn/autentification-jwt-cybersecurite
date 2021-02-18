@@ -48,7 +48,9 @@ class AuthController extends Controller
                 $essaisRestant = $user->essais -1;
 
                 if($user->essais > 3){
-                    Log::debug('Trop de tentative pour l\'utilisateur: ' . $user->name . ' ' . $user->email);
+                    openlog("projets_cybersecurite", LOG_USER, LOG_NDELAY);
+                    syslog(LOG_INFO|LOG_LOCAL0, "Trop de tentative de connexion pour l'utilisateur: {$user->name} , {$user->email}");
+                    /*Log::debug('Trop de tentative pour l\'utilisateur: ' . $user->name . ' ' . $user->email);*/
                     $user->essais = 0;
                     $user->save();
                     return response()->json([
